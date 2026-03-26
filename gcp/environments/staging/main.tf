@@ -27,6 +27,6 @@ module "staging_vpc" {
 
   project_id  = var.project_id
   region      = var.region
-  vpc_cidr    = "10.0.0.0/16"
+  vpc_cidr    = "10.1.0.0/16"
   environment = "staging"
 }
