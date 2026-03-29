@@ -1,0 +1,59 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "gcp/environment/**"
+      - "gcp/modules/**"
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Terraform Init
+        uses: terraform init
+        working-directory: gcp/environment/dev
+
+      - name: Terraform Validate
+        uses: terraform validate
+        working-directory: gcp/environment/dev
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        working-directory: gcp/environment/dev
+        env:
+          TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TD_VAR_bucket_name: ${{ secrets.DEV_BUCKET_NAME }}
+
+      - name: Post Plan to PR
+        uses: actions/githubt-script@v7
+        with:
+          scritps: |
+            const output = `#### Terraform Plan Dev
+            \`\`\`
+            ${{ steps.plan.outputs.stdout }}
+            \`\`\``;
+            github.rest.issues.creatComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })

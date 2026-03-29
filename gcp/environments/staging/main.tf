@@ -6,6 +6,12 @@ terraform {
     }
   }
   required_version = ">= 1.5"
+
+  # Backend block
+  backend "gcs" {
+    bucket = "my-terraform-state-bucket"
+    prefix = "environments/staging"
+  }
 }
 
 provider "google" {
